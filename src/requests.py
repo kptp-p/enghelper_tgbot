@@ -44,3 +44,21 @@ async def check_is_latin(input_word: str):
     return all(char in ascii_lowercase for char in input_word)
 
 
+async def count_words(tg_id: int):
+    '''Возвращает количество слов пользователя'''
+    async with async_session() as session:
+        return await session.scalar(select(func.count(Word.id)).where(Word.user_id == tg_id))
+
+
+async def get_my_words(tg_id: int, offset: int = 0):
+    '''Возвращает список слов пользователя с пагинацией'''
+    async with async_session() as session:
+        if await session.scalar(select(func.count(Word.id)).where(Word.user_id == tg_id)) != 0:
+            return await session.scalars(
+                select(Word)
+                .where(Word.user_id == tg_id)
+                .offset(offset)
+                .limit(DEFAULT_LIMIT_WORDLIST)
+            )
+        else:
+            return

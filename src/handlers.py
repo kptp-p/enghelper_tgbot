@@ -101,3 +101,19 @@ async def cmd_check_my_knowledge_second(message: types.Message, state: FSMContex
     finally:
         await state.clear()
 
+
+@router.message(F.text == 'Список моих слов')
+async def cmd_get_my_words(message: types.Message, state: FSMContext):
+    try:
+        words = await rq.get_my_words(message.from_user.id)
+        if words:
+            total_words = ''
+            for word in words:
+                total_words += f'{word.word} - {word.translate}\n'
+            await message.answer(total_words)
+        else:
+            await message.answer('У вас нет слов в словаре')
+    except Exception as e:
+        await message.answer(f'Произошла ошибка: {e}')
+    finally:
+        pass
