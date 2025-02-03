@@ -1,3 +1,4 @@
+import math
 from aiogram.filters.command import Command
 from aiogram import Router, types, F
 from aiogram.fsm.state import StatesGroup, State
@@ -8,7 +9,6 @@ from src import requests as rq
 from src import keyboards as kb
 
 router = Router()
-
 
 
 class AddWord(StatesGroup):
@@ -26,7 +26,8 @@ async def cmd_start(message: types.Message):
         await rq.set_user(message.from_user.id) 
         await message.answer('Привет, я твой личный словарь английских слов. Ты можешь добавить слово в словарь, а потом проверить свои знания!', reply_markup=kb.main)
     except Exception as e:
-        await message.answer(f'Произошла ошибка: {e}')
+        return e
+
 
 @router.message(Command('help'))
 async def cmd_help(message: types.Message):
@@ -37,9 +38,9 @@ async def cmd_help(message: types.Message):
 async def cmd_add_word_first(message: types.Message, state: FSMContext):
     try:
         await state.set_state(AddWord.word)
-        await message.answer('Впишите слово на английском которое хотите добавить')
+        await message.answer('Впишите слово на английском, которое хотите добавить')
     except Exception as e:
-        await message.answer(f'Произошла ошибка: {e}')
+        return e
 
 
 @router.message(AddWord.word)
@@ -54,7 +55,7 @@ async def cmd_add_word_second(message: types.Message, state: FSMContext):
             await state.clear()
     except Exception as e:
         await state.clear()
-        await message.answer(f'Произошла ошибка {e}')
+        return e
 
 
 @router.message(AddWord.translate)
@@ -105,15 +106,33 @@ async def cmd_check_my_knowledge_second(message: types.Message, state: FSMContex
 @router.message(F.text == 'Список моих слов')
 async def cmd_get_my_words(message: types.Message, state: FSMContext):
     try:
-        words = await rq.get_my_words(message.from_user.id)
+        page = 0
+        total_count_words = await rq.count_words(message.from_user.id)
+        total_page = math.ceil(total_count_words / rq.DEFAULT_LIMIT_WORDLIST)
+        words = await rq.get_my_words(message.from_user.id, page * rq.DEFAULT_LIMIT_WORDLIST)
+        
         if words:
-            total_words = ''
-            for word in words:
-                total_words += f'{word.word} - {word.translate}\n'
-            await message.answer(total_words)
+            words_list = [word.word + ' - ' + word.translate for word in words]
+            await message.answer('\n'.join(words_list), reply_markup=kb.inline_pagination_keyboard(page, total_page))
         else:
             await message.answer('У вас нет слов в словаре')
     except Exception as e:
-        await message.answer(f'Произошла ошибка: {e}')
-    finally:
-        pass
+        await e
+
+@router.callback_query(F.data.startswith('page_'))
+async def pagination_callback(callback_query: types.CallbackQuery):
+    try:
+        page = int(callback_query.data.split('_')[1])
+        total_count_words = await rq.count_words(callback_query.from_user.id)
+        total_page = math.ceil(total_count_words / rq.DEFAULT_LIMIT_WORDLIST)
+        words = await rq.get_my_words(callback_query.from_user.id, page * rq.DEFAULT_LIMIT_WORDLIST)
+        if words:
+            words_list = [word.word + ' - ' + word.translate for word in words]
+            keyboard = kb.inline_pagination_keyboard(page, total_page)
+            await callback_query.message.edit_text('\n'.join(words_list), reply_markup=keyboard)
+            await callback_query.answer()
+        else:
+            await callback_query.answer('У вас нет слов в словаре, для начала добавьте их')
+    except Exception as e:
+        return e
+

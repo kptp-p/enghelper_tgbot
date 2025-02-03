@@ -4,7 +4,7 @@ from string import ascii_lowercase
 from .models import async_session
 from .models import User, Word
 
-DEFAULT_LIMIT_WORDLIST = 100
+DEFAULT_LIMIT_WORDLIST = 10
 
 async def set_user(tg_id: int):
     '''Добавляет пользователя в базу данных'''
@@ -44,13 +44,7 @@ async def check_is_latin(input_word: str):
     return all(char in ascii_lowercase for char in input_word)
 
 
-async def count_words(tg_id: int):
-    '''Возвращает количество слов пользователя'''
-    async with async_session() as session:
-        return await session.scalar(select(func.count(Word.id)).where(Word.user_id == tg_id))
-
-
-async def get_my_words(tg_id: int, offset: int = 0):
+async def get_my_words(tg_id: int, offset: int):
     '''Возвращает список слов пользователя с пагинацией'''
     async with async_session() as session:
         if await session.scalar(select(func.count(Word.id)).where(Word.user_id == tg_id)) != 0:
@@ -62,3 +56,9 @@ async def get_my_words(tg_id: int, offset: int = 0):
             )
         else:
             return
+
+
+async def count_words(tg_id: int):
+    '''Возвращает количество слов пользователя'''
+    async with async_session() as session:
+        return await session.scalar(select(func.count(Word.id)).where(Word.user_id == tg_id))
