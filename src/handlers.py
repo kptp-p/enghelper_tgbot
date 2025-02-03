@@ -15,6 +15,8 @@ class AddWord(StatesGroup):
     word = State()
     translate = State()
 
+class DeleteWord(StatesGroup):
+    word = State()
 
 class CheckMyKnowledge(StatesGroup):
     waiting_translate_word = State()
@@ -136,3 +138,20 @@ async def pagination_callback(callback_query: types.CallbackQuery):
     except Exception as e:
         return e
 
+
+@router.message(F.text == 'Удалить слово')
+async def cmd_delete_word(message: types.Message, state: FSMContext):
+    await message.answer('Впишите слово, которое хотите удалить')
+    await state.set_state(DeleteWord.word)
+
+
+@router.message(DeleteWord.word)
+async def cmd_delete_word_second(message: types.Message, state: FSMContext):
+    try:
+        await state.update_data(word=message.text.lower())
+        if await rq.delete_word(message.from_user.id, message.text.lower()):
+            await message.answer(f'Слово {message.text.lower()} успешно удалено')
+        else:
+            await message.answer(f'Слово {message.text.lower()} не найдено в словаре')
+    except Exception as e:
+        return e

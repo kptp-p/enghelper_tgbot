@@ -1,4 +1,4 @@
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from string import ascii_lowercase
 
 from .models import async_session
@@ -62,3 +62,21 @@ async def count_words(tg_id: int):
     '''Возвращает количество слов пользователя'''
     async with async_session() as session:
         return await session.scalar(select(func.count(Word.id)).where(Word.user_id == tg_id))
+
+
+async def delete_word(tg_id: int, word: str):
+    async with async_session() as session:
+        try:    
+            if await session.scalar(select(Word).where(Word.user_id == tg_id, Word.word == word)):
+                await session.execute(
+                    delete(Word).where(
+                        Word.user_id == tg_id,
+                        Word.word == word
+                    )
+                )
+                await session.commit()
+                return True
+            else:
+                return
+        except Exception as e:
+            print(e)

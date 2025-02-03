@@ -2,7 +2,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 
 main = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text='Добавить слово', ),],
+        [KeyboardButton(text='Добавить слово', ), KeyboardButton(text='Удалить слово', )],
         [KeyboardButton(text='Проверить свои знания'), KeyboardButton(text='Список моих слов')],
     ],
     resize_keyboard=True,
