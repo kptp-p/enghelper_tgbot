@@ -112,7 +112,7 @@ async def cmd_get_my_words(message: types.Message, state: FSMContext):
         total_count_words = await rq.count_words(message.from_user.id)
         total_page = math.ceil(total_count_words / rq.DEFAULT_LIMIT_WORDLIST)
         words = await rq.get_my_words(message.from_user.id, page * rq.DEFAULT_LIMIT_WORDLIST)
-        
+   
         if words:
             words_list = [word.word + ' - ' + word.translate for word in words]
             await message.answer('\n'.join(words_list), reply_markup=kb.inline_pagination_keyboard(page, total_page))

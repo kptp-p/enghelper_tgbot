@@ -64,19 +64,8 @@ async def count_words(tg_id: int):
         return await session.scalar(select(func.count(Word.id)).where(Word.user_id == tg_id))
 
 
-async def delete_word(tg_id: int, word: str):
+async def delete_word(tg_id: int, word: str) -> bool:
     async with async_session() as session:
-        try:    
-            if await session.scalar(select(Word).where(Word.user_id == tg_id, Word.word == word)):
-                await session.execute(
-                    delete(Word).where(
-                        Word.user_id == tg_id,
-                        Word.word == word
-                    )
-                )
-                await session.commit()
-                return True
-            else:
-                return
-        except Exception as e:
-            print(e)
+        result = await session.execute(delete(Word).where(Word.user_id == tg_id, Word.word == word).returning(Word.id))
+        await session.commit()
+        return result is not None
