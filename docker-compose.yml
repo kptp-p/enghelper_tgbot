@@ -4,9 +4,8 @@ services:
   bot:
     build: .
     image: my_bot
-    volumes:
-      - sqlite_data:/app/data 
     restart: always
-
-volumes:
-  sqlite_data:
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+    env_file:
+      - .env
