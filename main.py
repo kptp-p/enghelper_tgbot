@@ -24,5 +24,5 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     try:
         asyncio.run(main())
-    except KeyboardInterrupt:
-        print('Бот остановлен')
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Bye!")

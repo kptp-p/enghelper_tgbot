@@ -27,6 +27,14 @@ class Word(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
 
+class LastWordUser(Base):
+    __tablename__ = 'last_word_user'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    word_id: Mapped[int] = mapped_column(nullable=True, default=None)
+
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

@@ -15,10 +15,13 @@ class AddWord(StatesGroup):
     word = State()
     translate = State()
 
+
 class DeleteWord(StatesGroup):
     word = State()
 
+
 class CheckMyKnowledge(StatesGroup):
+    count_words = State()
     waiting_translate_word = State()
 
 
@@ -79,7 +82,7 @@ async def cmd_add_word_third(message: types.Message, state: FSMContext):
 async def cmd_check_my_knowledge(message: types.Message, state: FSMContext):
     try:
         await state.clear()
-        word = await rq.get_random_word(message.from_user.id)
+        word = await rq.check_last_word_and_get(message.from_user.id)
         if word:
             await state.update_data(word=word.word, translate=word.translate)
             await state.set_state(CheckMyKnowledge.waiting_translate_word)
@@ -112,7 +115,7 @@ async def cmd_get_my_words(message: types.Message, state: FSMContext):
         total_count_words = await rq.count_words(message.from_user.id)
         total_page = math.ceil(total_count_words / rq.DEFAULT_LIMIT_WORDLIST)
         words = await rq.get_my_words(message.from_user.id, page * rq.DEFAULT_LIMIT_WORDLIST)
-   
+
         if words:
             words_list = [word.word + ' - ' + word.translate for word in words]
             await message.answer('\n'.join(words_list), reply_markup=kb.inline_pagination_keyboard(page, total_page))
@@ -120,6 +123,7 @@ async def cmd_get_my_words(message: types.Message, state: FSMContext):
             await message.answer('У вас нет слов в словаре')
     except Exception as e:
         await e
+
 
 @router.callback_query(F.data.startswith('page_'))
 async def pagination_callback(callback_query: types.CallbackQuery):
