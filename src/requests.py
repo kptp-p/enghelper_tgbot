@@ -1,10 +1,11 @@
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, update
 from string import ascii_lowercase
 
-from .models import async_session
+from .models import LastWordUser, async_session
 from .models import User, Word
 
 DEFAULT_LIMIT_WORDLIST = 10
+
 
 async def set_user(tg_id: int):
     '''Добавляет пользователя в базу данных'''
@@ -33,10 +34,35 @@ async def get_random_word(tg_id: int):
         word = await session.scalar(
             select(Word).where(Word.user_id == tg_id).order_by(func.random()).limit(1)
         )
+
         if word:
             return word
-        else:
-            return None
+        return None
+
+
+async def check_last_word_and_get(tg_id: int):
+    '''Проверяет последнее слово пользователя'''
+    async with async_session() as session:
+        last_word = await session.scalar(
+                select(LastWordUser).where(LastWordUser.user_id == tg_id)
+            )
+        if not last_word:
+            word = await get_random_word(tg_id)
+            session.add(LastWordUser(user_id=tg_id, word_id=word.id))
+            await session.commit()
+            return word
+
+        word_count = await session.scalar(
+            select(func.count()).where(Word.user_id == tg_id)
+        )
+        if word_count > 1:
+            while True:
+                word = await get_random_word(tg_id)
+                if word.id != last_word.word_id:
+                    await session.execute(update(LastWordUser).where(LastWordUser.user_id == tg_id).values(word_id=word.id))
+                    await session.commit()
+                    return word
+        return await get_random_word(tg_id)
 
 
 async def check_is_latin(input_word: str):
@@ -54,8 +80,7 @@ async def get_my_words(tg_id: int, offset: int):
                 .offset(offset)
                 .limit(DEFAULT_LIMIT_WORDLIST)
             )
-        else:
-            return
+        return
 
 
 async def count_words(tg_id: int):

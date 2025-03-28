@@ -1,0 +1,12 @@
+version: '3.9'
+
+services:
+  bot:
+    build: .
+    image: my_bot
+    volumes:
+      - sqlite_data:/app/data 
+    restart: always
+
+volumes:
+  sqlite_data:
