@@ -96,7 +96,7 @@ async def cmd_check_my_knowledge(message: types.Message, state: FSMContext):
 @router.message(CheckMyKnowledge.waiting_translate_word)
 async def cmd_check_my_knowledge_second(message: types.Message, state: FSMContext):
     try:
-        await state.update_data(waiting_translate_word=message.text)
+        await state.update_data(waiting_translate_word=message.text.lower())
         data = await state.get_data()
         if data['translate'] != data['waiting_translate_word']:
             await message.answer(f'К сожалению, вы ошиблись. Правильный перевод слова {data["word"]} будет {data["translate"]}')
